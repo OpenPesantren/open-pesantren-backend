@@ -1,6 +1,5 @@
 package com.open.pesantren.config
 
-import com.open.pesantren.entity.User
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
@@ -45,7 +44,7 @@ class JWTTokenProvider : Serializable {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).body
     }
 
-    fun getUsernameFromToken(token: String): String? {
+    fun getUsernameFromToken(token: String): String {
         return getAllClaimsFromToken(token).subject
     }
 
@@ -58,17 +57,19 @@ class JWTTokenProvider : Serializable {
         return expiration.before(Date())
     }
 
-    fun generateToken(param: User, roles: Set<String>, refresh: Boolean): String {
+    fun generateToken(username: String, roles: Set<String>, refresh: Boolean): String {
         val claims: MutableMap<String, Any?> = HashMap()
-        claims[username] = param.username
+        claims[this.username] = username
         claims[this.roles] = roles
-        claims[created] = Date()
+        claims[this.created] = Date()
+
         val expirationTimeLong = if (refresh) expirationRefreshTime!!.toLong() else expirationTime!!.toLong() //in second
         val createdDate = Date()
         val expirationDate = Date(createdDate.time + expirationTimeLong * 1000)
+
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(param.username)
+                .setSubject(username)
                 .setIssuedAt(createdDate)
                 .setExpiration(expirationDate)
                 .signWith(key)

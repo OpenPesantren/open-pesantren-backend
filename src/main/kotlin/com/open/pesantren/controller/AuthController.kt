@@ -5,6 +5,7 @@ import com.open.pesantren.service.UserService
 import io.swagger.v3.oas.annotations.security.SecurityRequirements
 import io.swagger.v3.oas.annotations.tags.Tag
 import lombok.RequiredArgsConstructor
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -26,27 +27,24 @@ class AuthController(val userService: UserService) {
     @PostMapping(value = ["/token"], produces = [MediaType.APPLICATION_NDJSON_VALUE])
     fun token(@RequestBody request: TokenRequest): Mono<TokenResponse> {
         return userService.token(request)
-                .flatMap { user ->
-                    Mono.just(TokenResponse(accessToken = user.accessToken!!, refreshToken = user.refreshToken!!))
-                }
     }
 
     @SecurityRequirements
     @PostMapping(value = ["/refresh-token"], produces = [MediaType.APPLICATION_NDJSON_VALUE])
-    fun refreshToken(@RequestBody request: RefreshTokenRequest): Mono<TokenResponse?>? {
+    fun refreshToken(@RequestBody request: RefreshTokenRequest): Mono<TokenResponse> {
         return userService.refreshToken(request.refreshToken)
-                .flatMap { user ->
-                    Mono.just(TokenResponse(accessToken = user.accessToken!!, refreshToken = user.refreshToken!!))
-                }
     }
 
     @SecurityRequirements
     @PostMapping(value = ["/signup"], produces = [MediaType.APPLICATION_NDJSON_VALUE])
-    fun signup(@RequestBody request: UserRequest): Mono<TokenResponse> {
-        return userService.signup(request)
-                .flatMap { user ->
-                    Mono.just(TokenResponse(accessToken = user.accessToken!!, refreshToken = user.refreshToken!!))
-                }
+    fun signup(@RequestBody request: UserRequest): Mono<RestResponse<UserResponse>> {
+        return userService.signup(request).flatMap {
+            Mono.just(RestResponse(
+                    status = HttpStatus.CREATED.name,
+                    code = HttpStatus.CREATED.value(),
+                    data = it)
+            )
+        }
     }
 
 }
